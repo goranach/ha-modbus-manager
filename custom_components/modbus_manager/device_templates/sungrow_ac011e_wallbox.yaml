@@ -1,0 +1,460 @@
+# Sungrow AC011E-01 Wallbox Template for Modbus Manager
+
+# Typically connected via RS485 to SHRT inverter
+# Slave ID: default 3, verify in iSolarCloud app
+
+name: "Sungrow AC011E Wallbox"
+description: "Sungrow AC011E-01 EV wallbox (L1). Supports AC007-00, AC011E-01, AC22E-01."
+manufacturer: "Sungrow"
+model: "AC011E-01"
+version: 1.1.0
+default_prefix: "WB"
+default_slave_id: 3
+type: "ev_charger"
+
+# Model selection: min/max output current from datasheet per model
+dynamic_config:
+  valid_models:
+    # AC007-00: 7.4 kW single-phase, 32A max
+    "AC007-00":
+      min_current: 6
+      max_current: 32
+      phases: 1
+      max_power_w: 7400
+    # AC011E-01: 11 kW three-phase, 16A per phase
+    "AC011E-01":
+      min_current: 6
+      max_current: 16
+      phases: 3
+      max_power_w: 11000
+    # AC22E-01: 11/22 kW three-phase, 32A per phase
+    "AC22E-01":
+      min_current: 6
+      max_current: 32
+      phases: 3
+      max_power_w: 22000
+
+# Input Registers (read-only)
+sensors:
+  - name: "Device Type Code"
+    unique_id: "device_type_code"
+    address: 21223
+    input_type: input
+    data_type: uint16
+    scan_interval: 600
+    group: "EV_device_info"
+    entity_category: "diagnostic"
+    icon: "mdi:ev-station"
+    map:
+      8429: "AC007-00"   # 0x20ED
+      8410: "AC011E-01"  # 0x20DA
+      16256: "AC22E-01"  # 0x3F80
+
+  - name: "Power Phases"
+    unique_id: "power_phases"
+    address: 21224
+    input_type: input
+    data_type: uint16
+    scan_interval: 600
+    group: "EV_device_info"
+    entity_category: "diagnostic"
+    icon: "mdi:sine-wave"
+
+  - name: "Rated Voltage"
+    unique_id: "rated_voltage"
+    address: 21261
+    input_type: input
+    data_type: uint16
+    unit_of_measurement: "V"
+    device_class: "voltage"
+    scan_interval: 600
+    group: "EV_device_info"
+    icon: "mdi:lightning-bolt"
+
+  - name: "Phase Switching Status"
+    unique_id: "phase_switching_status_raw"
+    address: 21269
+    input_type: input
+    data_type: uint16
+    scan_interval: 60
+    group: "EV_settings"
+    icon: "mdi:sine-wave"
+    map:
+      0: "Three phase"
+      1: "Single phase"
+
+  - name: "Minimum Charging Power"
+    unique_id: "minimum_charging_power"
+    address: 21271
+    input_type: input
+    data_type: uint16
+    precision: 1
+    scale: 1
+    unit_of_measurement: "W"
+    device_class: "power"
+    scan_interval: 60
+    group: "EV_charging_status"
+    icon: "mdi:ev-station"
+
+  - name: "Maximum Charging Power"
+    unique_id: "maximum_charging_power"
+    address: 21272
+    input_type: input
+    data_type: uint16
+    precision: 1
+    scale: 1
+    unit_of_measurement: "W"
+    device_class: "power"
+    scan_interval: 60
+    group: "EV_charging_status"
+    icon: "mdi:ev-station"
+
+  - name: "Total Energy"
+    unique_id: "total_energy"
+    address: 21299
+    input_type: input
+    data_type: uint32
+    swap: word
+    precision: 1
+    scale: 1
+    unit_of_measurement: "Wh"
+    state_class: "total_increasing"
+    device_class: "energy"
+    scan_interval: 600
+    group: "EV_energy"
+    icon: "mdi:meter-electric"
+
+  - name: "Phase A Charging Voltage"
+    unique_id: "phase_a_charging_voltage"
+    address: 21301
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    unit_of_measurement: "V"
+    device_class: "voltage"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_measurement"
+    icon: "mdi:lightning-bolt"
+
+  - name: "Phase A Charging Current"
+    unique_id: "phase_a_charging_current"
+    address: 21302
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    unit_of_measurement: "A"
+    device_class: "current"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_measurement"
+    icon: "mdi:current-dc"
+
+  - name: "Phase B Charging Voltage"
+    unique_id: "phase_b_charging_voltage"
+    address: 21303
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    unit_of_measurement: "V"
+    device_class: "voltage"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_measurement"
+    icon: "mdi:lightning-bolt"
+
+  - name: "Phase B Charging Current"
+    unique_id: "phase_b_charging_current"
+    address: 21304
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    unit_of_measurement: "A"
+    device_class: "current"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_measurement"
+    icon: "mdi:current-dc"
+
+  - name: "Phase C Charging Voltage"
+    unique_id: "phase_c_charging_voltage"
+    address: 21305
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    unit_of_measurement: "V"
+    device_class: "voltage"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_measurement"
+    icon: "mdi:lightning-bolt"
+
+  - name: "Phase C Charging Current"
+    unique_id: "phase_c_charging_current"
+    address: 21306
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    unit_of_measurement: "A"
+    device_class: "current"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_measurement"
+    icon: "mdi:current-dc"
+
+  - name: "Charging Power"
+    unique_id: "charging_power"
+    address: 21307
+    input_type: input
+    data_type: uint32
+    swap: word
+    unit_of_measurement: "W"
+    device_class: "power"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_status"
+    icon: "mdi:ev-station"
+
+  - name: "Charging Energy"
+    unique_id: "charging_energy"
+    address: 21309
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 1
+    unit_of_measurement: "Wh"
+    device_class: "energy"
+    state_class: "measurement"
+    scan_interval: 60
+    group: "EV_charging_status"
+    icon: "mdi:meter-electric"
+
+  - name: "Charging Status"
+    unique_id: "charging_status_raw"
+    address: 21316
+    input_type: input
+    data_type: uint16
+    scan_interval: 10
+    group: "EV_charging_status"
+    icon: "mdi:ev-station"
+    map:
+      1: "Idle"
+      2: "Standby"
+      3: "Charging"
+      4: "Charging suspended (pile)"
+      5: "Charging suspended (vehicle)"
+      6: "Charging completed"
+      7: "Reserved"
+      8: "Disabled"
+      9: "Fault"
+
+  - name: "Charging Start Time"
+    unique_id: "charging_start_time_raw"
+    address: 21317
+    input_type: input
+    data_type: uint32
+    swap: word
+    scan_interval: 60
+    group: "EV_charging_status"
+    entity_category: "diagnostic"
+    icon: "mdi:clock-start"
+
+  - name: "Charging End Time"
+    unique_id: "charging_end_time_raw"
+    address: 21319
+    input_type: input
+    data_type: uint32
+    swap: word
+    scan_interval: 60
+    group: "EV_charging_status"
+    entity_category: "diagnostic"
+    icon: "mdi:clock-end"
+
+  - name: "Start Mode"
+    unique_id: "start_mode_raw"
+    address: 21313
+    input_type: input
+    data_type: uint16
+    scan_interval: 600
+    group: "EV_settings"
+    entity_category: "diagnostic"
+    icon: "mdi:play-circle"
+    map:
+      0: "Stopped"
+      1: "Start with EMS"
+      2: "Start by swiping"
+
+# Holding Registers (read - 21202, 21203, 21210, 21231, 21262 read via controls)
+  - name: "Remote Control"
+    unique_id: "remote_control"
+    address: 21211
+    input_type: holding
+    data_type: uint16
+    scan_interval: 60
+    group: "EV_charging_status"
+    entity_category: "diagnostic"
+    icon: "mdi:remote"
+
+# Controls (Holding Registers - read/write)
+controls:
+  - type: "number"
+    name: "Output Current"
+    unique_id: "output_current"
+    address: 21202
+    input_type: holding
+    data_type: uint16
+    scale: 0.1
+    unit_of_measurement: "A"
+    device_class: "current"
+    min_value: "{{min_current}}"
+    max_value: "{{max_current}}"
+    step: 0.1
+    scan_interval: 60
+    group: "EV_current_setting"
+    icon: "mdi:gauge"
+
+  - type: "select"
+    name: "Phase Mode"
+    unique_id: "phase_mode"
+    address: 21203
+    input_type: holding
+    data_type: uint16
+    scan_interval: 60
+    group: "EV_settings"
+    options:
+      0: "Three phase"
+      1: "Single phase"
+
+  - type: "switch"
+    name: "Charger Enable"
+    unique_id: "charger_enable"
+    address: 21210
+    input_type: holding
+    data_type: uint16
+    write_value: 1
+    write_value_off: 0
+    on_value: 1
+    off_value: 0
+    scan_interval: 60
+    group: "EV_settings"
+
+  - type: "number"
+    name: "Mileage per kWh"
+    unique_id: "mileage_per_kwh_set"
+    address: 21231
+    input_type: holding
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: "km/kWh"
+    min_value: 1
+    max_value: 500
+    step: 0.1
+    scan_interval: 60
+    group: "EV_settings"
+    icon: "mdi:car-cruise-control"
+
+  - type: "select"
+    name: "Working Mode"
+    unique_id: "working_mode"
+    address: 21262
+    input_type: holding
+    data_type: uint16
+    scan_interval: 600
+    group: "EV_settings"
+    options:
+      0: "Network"
+      2: "Plug and Play"
+      6: "EMS"
+
+  - type: "button"
+    name: "Start Charging"
+    unique_id: "start_charging"
+    address: 21211
+    input_type: holding
+    data_type: uint16
+    button_press_value: 0
+    scan_interval: 60
+    group: "EV_charging_control"
+    icon: "mdi:play"
+
+  - type: "button"
+    name: "Stop Charging"
+    unique_id: "stop_charging"
+    address: 21211
+    input_type: holding
+    data_type: uint16
+    button_press_value: 1
+    scan_interval: 60
+    group: "EV_charging_control"
+    icon: "mdi:stop"
+
+# Calculated sensors
+calculated:
+  # Raw values are Unix timestamps - format for display
+  - name: "Charging Start Time"
+    unique_id: "charging_start_time"
+    type: "sensor"
+    availability: >-
+      {{ states('sensor.{PREFIX}_charging_start_time_raw') | is_number and
+         (states('sensor.{PREFIX}_charging_start_time_raw') | int) > 0 }}
+    state: >-
+      {{ (states('sensor.{PREFIX}_charging_start_time_raw') | int) | timestamp_custom('%d.%m.%Y %H:%M') }}
+    unit_of_measurement: ""
+    group: "EV_charging_status"
+    icon: "mdi:clock-start"
+
+  - name: "Charging End Time"
+    unique_id: "charging_end_time"
+    type: "sensor"
+    availability: >-
+      {{ states('sensor.{PREFIX}_charging_end_time_raw') | is_number and
+         (states('sensor.{PREFIX}_charging_end_time_raw') | int) > 0 }}
+    state: >-
+      {{ (states('sensor.{PREFIX}_charging_end_time_raw') | int) | timestamp_custom('%d.%m.%Y %H:%M') }}
+    unit_of_measurement: ""
+    group: "EV_charging_status"
+    icon: "mdi:clock-end"
+
+  - name: "Charging Duration"
+    unique_id: "charging_duration"
+    type: "sensor"
+    availability: >-
+      {{ states('sensor.{PREFIX}_charging_start_time_raw') | is_number and
+         states('sensor.{PREFIX}_charging_end_time_raw') | is_number and
+         (states('sensor.{PREFIX}_charging_start_time_raw') | int) > 0 and
+         (states('sensor.{PREFIX}_charging_end_time_raw') | int) > 0 }}
+    state: >-
+      {% set sec = (states('sensor.{PREFIX}_charging_end_time_raw') | int) - (states('sensor.{PREFIX}_charging_start_time_raw') | int) %}
+      {{ '%d:%02d' | format(sec // 3600, (sec % 3600) // 60) }}
+    unit_of_measurement: ""
+    group: "EV_charging_status"
+    icon: "mdi:clock-outline"
+
+  - name: "Charged Range"
+    unique_id: "charged_range"
+    type: "sensor"
+    availability: >-
+      {{ states('sensor.{PREFIX}_charging_energy') | is_number and
+         states('number.{PREFIX}_mileage_per_kwh_set') | is_number }}
+    state: >-
+      {{ ((states('sensor.{PREFIX}_charging_energy') | float(0) * states('number.{PREFIX}_mileage_per_kwh_set') | float(0)) / 1000) | round(1) }}
+    unit_of_measurement: "km"
+    device_class: "distance"
+    state_class: "measurement"
+    group: "EV_charging_status"
+    icon: "mdi:map-marker-distance"
+    precision: 1
+
+# Binary sensors
+binary_sensors:
+  - name: "Charging Active"
+    unique_id: "charging_active"
+    type: "binary_sensor"
+    availability: >-
+      {{ not is_state('sensor.{PREFIX}_charging_status_raw', 'unavailable') }}
+    state: >-
+      {{ states('sensor.{PREFIX}_charging_status_raw') == 'Charging' }}
+    device_class: "power"
+    group: "EV_charging_status"
+    icon: "mdi:ev-station"
