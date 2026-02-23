@@ -588,6 +588,99 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
     # register_optimize service removed - register optimization is automatic and handled by the coordinator
 
+    async def remove_device_service(call):
+        """Remove a device from a Modbus Manager hub.
+
+        Use this to remove test entries or devices that no longer respond
+        (e.g. wallbox not connected) without deleting the entire hub.
+        """
+        entry_id = call.data.get("entry_id")
+        prefix = call.data.get("prefix")
+        slave_id = call.data.get("slave_id")
+        template = call.data.get("template")
+
+        if not entry_id:
+            _LOGGER.error("remove_device service: entry_id is required")
+            return
+
+        if not any([prefix, slave_id is not None, template]):
+            _LOGGER.error(
+                "remove_device service: at least one of prefix, slave_id, or template is required"
+            )
+            return
+
+        config_entry = None
+        for entry in hass.config_entries.async_entries(DOMAIN):
+            if entry.entry_id == entry_id:
+                config_entry = entry
+                break
+
+        if not config_entry:
+            _LOGGER.error("remove_device service: config entry %s not found", entry_id)
+            return
+
+        devices = list(config_entry.data.get("devices", []))
+        if not devices:
+            _LOGGER.warning(
+                "remove_device service: hub %s has no devices array", entry_id
+            )
+            return
+
+        def device_matches(device: dict) -> bool:
+            if prefix and device.get("prefix", "").lower() != str(prefix).lower():
+                return False
+            if slave_id is not None and device.get("slave_id") != slave_id:
+                return False
+            if template and device.get("template") != template:
+                return False
+            return True
+
+        to_remove = [d for d in devices if device_matches(d)]
+        if not to_remove:
+            _LOGGER.warning(
+                "remove_device service: no matching device found (prefix=%s, slave_id=%s, template=%s)",
+                prefix,
+                slave_id,
+                template,
+            )
+            return
+
+        new_devices = [d for d in devices if not device_matches(d)]
+
+        hub_config = config_entry.data.get("hub", {})
+        host = hub_config.get("host") or config_entry.data.get("host", "unknown")
+        port = hub_config.get("port") or config_entry.data.get("port", 502)
+
+        device_registry = dr.async_get(hass)
+        for device in to_remove:
+            d_slave_id = device.get("slave_id", 1)
+            d_prefix = device.get("prefix", "unknown")
+            device_identifier = f"modbus_manager_{host}_{port}_slave_{d_slave_id}"
+            device_entry = device_registry.async_get_device(
+                identifiers={(DOMAIN, device_identifier)}
+            )
+            if device_entry and (
+                device_entry.config_entries
+                and config_entry.entry_id in device_entry.config_entries
+            ):
+                device_registry.async_remove_device(device_entry.id)
+                _LOGGER.info(
+                    "Removed device '%s' (slave %s) from device registry",
+                    d_prefix,
+                    d_slave_id,
+                )
+
+        new_data = dict(config_entry.data)
+        new_data["devices"] = new_devices
+        hass.config_entries.async_update_entry(config_entry, data=new_data)
+
+        _LOGGER.info(
+            "Removed %d device(s) from hub %s, reloading integration",
+            len(to_remove),
+            entry_id,
+        )
+        await hass.config_entries.async_reload(config_entry.entry_id)
+
     async def reload_templates_service(call):
         """Handle template reload service - reload templates and update entity attributes without restart.
 
@@ -844,5 +937,6 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, "performance_reset", performance_reset_service)
     # register_optimize removed - optimization is automatic
     hass.services.async_register(DOMAIN, "reload_templates", reload_templates_service)
+    hass.services.async_register(DOMAIN, "remove_device", remove_device_service)
 
     _LOGGER.debug("Modbus Manager services registered successfully")
