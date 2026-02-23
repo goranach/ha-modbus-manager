@@ -7,9 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.5] - 2026-02-18
+## [0.2.5] - 2026-02-23
 
 ### ✨ Added
+
+#### Sungrow AC011E Wallbox Template
+- New template for Sungrow EV wallboxes (AC007-00, AC011E-01, AC22E-01)
+- Typically connected via RS485 to SHRT inverter; Modbus Manager uses inverter's slave_id
+- Sensors: device type, power phases, charging status, phase voltages/currents, energy, charging times
+- Controls: Output Current (model-dependent 6–16 A or 6–32 A), Phase Mode, Charger Enable, Mileage per kWh, Working Mode
+- Buttons: Start/Stop Charging (remote control via register 21211)
+- Calculated: charging start/end time (formatted), duration, charged range
+- Dynamic config: valid_models for model-specific Output Current limits from datasheet
+- Docs: `docs/README_sungrow_ac011e_wallbox.md`
+
+#### remove_device Service
+- New service `modbus_manager.remove_device` to remove a device from a hub without deleting the entire hub
+- Use case: Remove test entries or non-responding devices (e.g. wallbox not connected)
+- Parameters: entry_id (required), prefix, slave_id, or template (at least one for device identification)
+- Cleans device registry and reloads integration
+- Docs: entry_id lookup via Template `config_entry_id()` or diagnostics download
 
 #### Heidelberg Energy Control Wallbox Template
 - New template for Amperfied Heidelberg Energy Control EV charger (Modbus RTU)
