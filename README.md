@@ -71,6 +71,7 @@ A modular, template-based Modbus Manager for Home Assistant with predefined devi
 - **[Sungrow SBR Battery](docs/README_sungrow_sbr_battery.md)** – SBR096–SBR256
 - **[Solvis SC2/SC3](docs/README_solvis_sc3.md)** – Heating controller, temperature sensors, pump controls
 - **[Compleo eBox Professional](docs/README_compleo_ebox_professional.md)** – EV charger, 3-phase charging
+- **[Sungrow AC011E Wallbox](docs/README_sungrow_ac011e_wallbox.md)** – EV wallbox (AC007-00, AC011E-01, AC22E-01), RS485 via inverter
 
 ### ⚠️ Needs Testing
 *Based on protocol documentation, not verified on hardware.*
@@ -176,6 +177,7 @@ https://github.com/TCzerny/ha-modbus-manager/wiki
 - **[Sungrow SBR Battery](docs/README_sungrow_sbr_battery.md)** - SBR battery template
 - **[Solvis SC3](docs/README_solvis_sc3.md)** - Solvis SC2/SC3 template
 - **[Compleo eBox Professional](docs/README_compleo_ebox_professional.md)** - EV charger template
+- **[Sungrow AC011E Wallbox](docs/README_sungrow_ac011e_wallbox.md)** - EV wallbox template (AC007, AC011E, AC22E)
 - **[Heidelberg Energy Control](docs/README_heidelberg_energy_control.md)** - EV charger (Modbus RTU via proxy)
 - **[BYD Battery Box](docs/README_byd_battery_box.md)** - BYD Battery-Box template (BETA)
 - **[Fronius GEN24 Dynamic](docs/README_fronius_dynamic.md)** - Fronius GEN24 template (BETA)

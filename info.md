@@ -54,9 +54,11 @@ This integration is provided "AS IS" without warranty of any kind. By using this
 - ☀️ **Sungrow iHomeManager**: New EMS template added (BETA - needs testing)
 - 🔋 **Compleo EBox Professional**: EV charger wallbox integration template
 - 🔋 **Sungrow SBR Battery**: Battery system template
+- 🔌 **Sungrow AC011E Wallbox**: EV wallbox (AC007-00, AC011E-01, AC22E-01), RS485 via inverter – *needs testing*
+- 🔌 **Heidelberg Energy Control**: EV charger (Modbus RTU via proxy) – *needs testing*
 
-**New / BETA templates (v0.1.9)**
-The following templates were added recently and **have not been tested on real hardware**. If you use them, please report any issues or feedback so we can fix register maps and behaviour: **Fronius GEN24**, **Growatt MIN/MOD/MAX**, **SMA Sunny Tripower/Boy**, **SolaX Inverter Series**, **BYD Battery Box**. See [Documentation](https://github.com/TCzerny/ha-modbus-manager/wiki) and `docs/` for per-template docs.
+**New / BETA templates**
+The following templates were added recently and **have not been tested on real hardware**. If you use them, please report any issues or feedback so we can fix register maps and behaviour: **Sungrow AC011E-01 Wallbox**, **Heidelberg Energy Control**, **Fronius GEN24**, **Growatt MIN/MOD/MAX**, **SMA Sunny Tripower/Boy**, **SolaX Inverter Series**, **BYD Battery Box**. See [Documentation](https://github.com/TCzerny/ha-modbus-manager/wiki) and `docs/` for per-template docs.
 
 
 ## 📋 Configuration
@@ -79,6 +81,8 @@ The following templates were added recently and **have not been tested on real h
 - **Sungrow SG Inverters**: Dynamic template with model selection (SG3.0RS, SG4.0RS, SG5.0RS, SG6.0RS, SG8.0RS, SG10RS, SG3.0RT, SG4.0RT, SG5.0RT, SG6.0RT)
 - **Compleo EBox Professional**: Wallbox charging station integration
 - **Sungrow SBR Battery**: Battery system template
+- **Sungrow AC011E Wallbox**: EV wallbox (AC007-00, AC011E-01, AC22E-01) – *needs testing*
+- **Heidelberg Energy Control**: EV charger (Modbus RTU via proxy) – *needs testing*
 
 
 ### Template Development
