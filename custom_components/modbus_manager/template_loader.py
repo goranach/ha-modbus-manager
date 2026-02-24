@@ -611,6 +611,12 @@ async def load_single_template(
             result["dynamic_config"] = data["dynamic_config"]
             _LOGGER.debug("Template %s includes dynamic_config", template_name)
 
+        # Include config-flow metadata (e.g. for battery template filtering)
+        if "requires_connection_type" in data:
+            result["requires_connection_type"] = data["requires_connection_type"]
+        if "config_flow_note" in data:
+            result["config_flow_note"] = data["config_flow_note"]
+
         # Extract SunSpec metadata if present
         if "sunspec_enabled" in data:
             result["sunspec_enabled"] = data["sunspec_enabled"]

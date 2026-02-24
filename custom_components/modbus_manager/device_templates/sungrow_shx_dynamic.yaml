@@ -121,8 +121,9 @@ dynamic_config:
 
   meter_type:
     description: "Meter type connected to the inverter"
-    options: ["DTSU666", "DTSU666-20"]
+    options: ["None", "DTSU666", "DTSU666-20"]
     default: "DTSU666"
+    # None: No smart meter connected - meter registers filtered out
     # DTSU666: Standard single-channel meter (registers 5600-5606, scale: 1)
     # DTSU666-20: Dual-channel meter with Channel 2 support (registers 5600-5606 + 13199-13205, scale: 1)
     # Meter Channel 2 sensors are only valid when DTSU666-20 is selected
@@ -131,6 +132,8 @@ dynamic_config:
     description: "Battery configuration"
     options: ["none", "standard_battery", "sbr_battery"]
     default: "none"
+    # Battery registers only passed through LAN port, not WINET - skip battery flow when WINET
+    condition: "connection_type != 'WINET'"
 
 # Base sensors (will be filtered based on configuration)
 sensors:
@@ -591,7 +594,7 @@ sensors:
     state_class: measurement
     scale: 0.01
     scan_interval: 10
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   # Meter Data (will be filtered based on phases and meter_type)
   # DTSU666 and DTSU666-20 use the same registers (5600-5606)
@@ -962,7 +965,7 @@ sensors:
     state_class: measurement
     scale: 0.1
     scan_interval: 10
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Meter phase B voltage
     unique_id: meter_phase_b_voltage
@@ -975,7 +978,7 @@ sensors:
     state_class: measurement
     scale: 0.1
     scan_interval: 10
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Meter phase C voltage
     unique_id: meter_phase_c_voltage
@@ -1809,7 +1812,7 @@ sensors:
     state_class: total_increasing
     scale: 0.1
     scan_interval: 600
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Total exported energy from PV
     unique_id: total_exported_energy_from_pv
@@ -1823,7 +1826,7 @@ sensors:
     state_class: total
     scale: 0.1
     scan_interval: 600
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   # Power consumed by loads
   - name: Load power
@@ -1838,7 +1841,7 @@ sensors:
     state_class: measurement
     scale: 1
     scan_interval: 10
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   # Power delivered by the inverter to the grid
   - name: Export power raw
@@ -1954,7 +1957,7 @@ sensors:
     scale: 1
     scan_interval: 10
     group: "PV_battery_power"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Battery level
     unique_id: battery_level
@@ -1967,7 +1970,7 @@ sensors:
     state_class: measurement
     scale: 0.1
     scan_interval: 60
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Battery state of health
     unique_id: battery_state_of_health
@@ -2110,7 +2113,7 @@ sensors:
     state_class: total_increasing
     scale: 0.1
     scan_interval: 600
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Total imported energy
     unique_id: total_imported_energy
@@ -2124,7 +2127,7 @@ sensors:
     state_class: total
     scale: 0.1
     scan_interval: 600
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
     entity_category: "diagnostic"
 
   - name: Daily battery charge
@@ -2163,7 +2166,7 @@ sensors:
     state_class: total_increasing
     scale: 0.1
     scan_interval: 60
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Total exported energy
     unique_id: total_exported_energy
@@ -2177,7 +2180,7 @@ sensors:
     state_class: total
     scale: 0.1
     scan_interval: 600
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   # --- COMMENTED OUT: Fault/Diagnostic registers (Protocol V1.1.11 Appendix 4) - uncomment for diagnostics ---
   # Bit-based fault analysis; flags key = bit position
@@ -2603,7 +2606,7 @@ sensors:
       0xBB: "Discharge"
       0xCC: "Stop"
     group: "PV_battery_control"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Battery forced charge discharge power raw
     unique_id: battery_forced_charge_discharge_power_raw
@@ -2615,7 +2618,7 @@ sensors:
     device_class: "power"
     state_class: measurement
     scan_interval: 10
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Global mpp scan manual raw
     unique_id: global_mpp_scan_manual_raw
@@ -2638,7 +2641,7 @@ sensors:
     options:
       0x55: "Disabled"
       0xAA: "Enabled"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
 # Controls for write access
 controls:
@@ -2654,7 +2657,7 @@ controls:
       0xCF: "Enabled"
       0xCE: "Shutdown"
     group: "PV_control"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - type: "select"
     name: "EMS Mode Selection"
@@ -2670,7 +2673,7 @@ controls:
       3: "External EMS"
       4: "VPP"
     group: "PV_modes"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - type: "select"
     name: "Battery forced charge discharge cmd"
@@ -2684,7 +2687,7 @@ controls:
       0xBB: "Discharge"
       0xCC: "Stop"
     group: "PV_battery_control"
-    condition: "battery_enabled == true and meter_type != 'iHomeManager'"
+    condition: "battery_enabled == true and meter_type in ['DTSU666', 'DTSU666-20']"
 
   - name: Battery forced charge discharge power
     unique_id: battery_forced_charge_discharge_power
@@ -2701,7 +2704,7 @@ controls:
     step: 100
     scan_interval: 10
     group: "PV_battery_control"
-    condition: "battery_enabled == true and meter_type != 'iHomeManager'"
+    condition: "battery_enabled == true and meter_type in ['DTSU666', 'DTSU666-20']"
     # Placeholder will be replaced with maximum of model-specific max_charge_power and max_discharge_power
     # For SH10RT: max(10600, 10600) = 10600 W
 
@@ -2778,7 +2781,7 @@ controls:
     mode: "box"  # Explicitly set to box for consistent UI display
     scan_interval: 30
     group: "PV_control"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - type: "select"
     name: "Export Power Limit Mode"
@@ -2791,7 +2794,7 @@ controls:
       0x55: "Disabled"
       0xAA: "Enabled"
     group: "PV_modes"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - type: "number"
     name: "Export Power Limit Ratio"
@@ -2808,7 +2811,7 @@ controls:
     mode: "box"  # Explicitly set to box for consistent UI display
     scan_interval: 30
     group: "PV_control"
-    condition: "meter_type != 'iHomeManager'"
+    condition: "meter_type in ['DTSU666', 'DTSU666-20']"
 
   - type: "select"
     name: "Active Power Limitation"

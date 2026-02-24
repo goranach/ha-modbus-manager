@@ -276,6 +276,8 @@ class ModbusManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         template_data = self._templates.get(self._selected_template, {})
         default_prefix = template_data.get("default_prefix", "SG")
         default_slave_id = template_data.get("default_slave_id", DEFAULT_SLAVE)
+        # Show config_flow_note when selected template has one (e.g. SBR: LAN required)
+        config_flow_note = template_data.get("config_flow_note", "") or ""
 
         # Show connection parameters form
         return self.async_show_form(
@@ -299,6 +301,7 @@ class ModbusManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             description_placeholders={
                 "template_name": self._selected_template,
+                "config_flow_note": config_flow_note,
             },
         )
 
@@ -396,8 +399,33 @@ class ModbusManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "pv_inverter",
                 "pv_hybrid_inverter",
             ] and self._supports_battery_config(template_data):
+                # Check battery_config condition (e.g. connection_type != WINET - skip battery when WINET)
+                battery_config_def = template_data.get("dynamic_config", {}).get(
+                    "battery_config", {}
+                )
+                condition = (
+                    battery_config_def.get("condition")
+                    if isinstance(battery_config_def, dict)
+                    else None
+                )
+                if condition and not _evaluate_condition(condition, combined_input):
+                    _LOGGER.info(
+                        "Skipping battery flow: condition '%s' not met (connection_type=%s)",
+                        condition,
+                        combined_input.get("connection_type"),
+                    )
+                    self._inverter_config = combined_input
+                    self._inverter_config["battery_config"] = "none"
+                    self._inverter_config["battery_template"] = "none"
+                    self._keep_inverter_battery_entities = False
+                    return await self.async_step_finalize_inverter_without_battery()
+
                 # Store the inverter config and ask about battery
                 self._inverter_config = combined_input
+                # Persist connection_type in flow context (survives flow restoration between steps)
+                self.context["connection_type"] = combined_input.get(
+                    "connection_type", "LAN"
+                )
                 _LOGGER.debug("PV inverter detected - proceeding to battery detection")
                 return await self.async_step_battery_detection()
             else:
@@ -1526,14 +1554,58 @@ class ModbusManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Get available battery templates
         battery_templates = {}
         template_names = await get_template_names()
+        # Read connection_type from inverter_config; fallback to flow context
+        # (context persists when flow is serialized between steps, _inverter_config may not)
+        connection_type = "LAN"
+        if self._inverter_config and "connection_type" in self._inverter_config:
+            connection_type = self._inverter_config["connection_type"]
+        elif self.context.get("connection_type"):
+            connection_type = self.context["connection_type"]
+        # Normalize for comparison (WINET/Winet/LAN etc.)
+        connection_type_norm = (
+            str(connection_type).strip().upper() if connection_type else "LAN"
+        )
+        source = (
+            "inverter_config"
+            if (self._inverter_config and "connection_type" in self._inverter_config)
+            else "flow_context"
+        )
+        _LOGGER.info(
+            "Battery template filter: connection_type=%s (from %s), SBR will be %s",
+            connection_type,
+            source,
+            "hidden" if connection_type_norm == "WINET" else "shown",
+        )
 
+        filtered_out_notes = []
         for template_name in template_names:
             template_data = await get_template_by_name(template_name)
             if template_data and isinstance(template_data, dict):
                 template_type = template_data.get("type", "")
                 if template_type == "battery":
+                    # Filter by requires_connection_type (e.g. SBR needs LAN, not WiNet-S)
+                    required_conn = template_data.get("requires_connection_type")
+                    if required_conn:
+                        required_norm = str(required_conn).strip().upper()
+                        if connection_type_norm != required_norm:
+                            _LOGGER.info(
+                                "Excluding battery template %s: requires connection %s, current is %s",
+                                template_name,
+                                required_conn,
+                                connection_type,
+                            )
+                            note = template_data.get("config_flow_note", "")
+                            if note:
+                                filtered_out_notes.append(f"{template_name}: {note}")
+                            continue
                     display_name = template_data.get("display_name", template_name)
                     battery_templates[template_name] = display_name
+
+        config_flow_note = ""
+        if filtered_out_notes:
+            config_flow_note = "Filtered out (connection type): " + "; ".join(
+                filtered_out_notes
+            )
 
         if not battery_templates:
             battery_templates = {"other": "Other (no template)"}
@@ -1557,6 +1629,7 @@ class ModbusManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 "inverter_prefix": self._inverter_config.get("prefix", "SG"),
                 "available_templates": ", ".join(battery_templates.values()),
+                "config_flow_note": config_flow_note,
             },
         )
 
@@ -2720,83 +2793,118 @@ class ModbusManagerOptionsFlow(config_entries.OptionsFlow):
 
             # Handle battery_config specially - load available battery templates
             if self._supports_battery_config(template_data):
-                # Build battery options: start with "none", then add available battery templates
-                battery_options = {"none": "None"}
-
-                # Load all available battery templates
-                from .template_loader import get_template_names
-
-                template_names = await get_template_names()
-                battery_templates_dict = {}
-                for template_name in template_names:
-                    battery_template_data = await get_template_by_name(template_name)
-                    if battery_template_data and isinstance(
-                        battery_template_data, dict
-                    ):
-                        template_type = battery_template_data.get("type", "")
-                        if template_type == "battery":
-                            display_name = battery_template_data.get(
-                                "display_name", template_name
-                            )
-                            battery_templates_dict[template_name] = display_name
-
-                # Sort battery templates alphabetically by display name for better UX
-                sorted_battery_templates = dict(
-                    sorted(battery_templates_dict.items(), key=lambda x: x[1])
+                # Check battery_config condition (e.g. connection_type != WINET)
+                battery_config_def = dynamic_config.get("battery_config", {})
+                condition = (
+                    battery_config_def.get("condition")
+                    if isinstance(battery_config_def, dict)
+                    else None
                 )
-                battery_options.update(sorted_battery_templates)
-
-                # Get current battery config - check devices array first
-                current_battery_config = self.config_entry.data.get(
-                    "battery_config", "none"
+                effective_data = {
+                    **self.config_entry.data,
+                    "connection_type": self.config_entry.data.get(
+                        "connection_type", "LAN"
+                    ),
+                }
+                battery_condition_met = not condition or _evaluate_condition(
+                    condition, effective_data
                 )
-                battery_template = self.config_entry.data.get(
-                    "battery_template", "none"
-                )
+                if battery_condition_met:
+                    # Build battery options: start with "none", then add available battery templates
+                    battery_options = {"none": "None"}
 
-                # Check if there's a Battery device in the devices array
-                devices = self.config_entry.data.get("devices", [])
-                if isinstance(devices, list):
-                    for device in devices:
-                        device_template = device.get("template", "")
-                        device_type = device.get("type", "").lower()
-                        if (
-                            device_type == "battery"
-                            or device_template in battery_options
+                    # Load all available battery templates
+                    from .template_loader import get_template_names
+
+                    template_names = await get_template_names()
+                    connection_type = self.config_entry.data.get(
+                        "connection_type", "LAN"
+                    )
+                    connection_type_norm = (
+                        str(connection_type).strip().upper()
+                        if connection_type
+                        else "LAN"
+                    )
+                    battery_templates_dict = {}
+                    for template_name in template_names:
+                        battery_template_data = await get_template_by_name(
+                            template_name
+                        )
+                        if battery_template_data and isinstance(
+                            battery_template_data, dict
                         ):
-                            # Found Battery device - use template name as battery_config
-                            if device_template in battery_options:
-                                current_battery_config = device_template
-                                battery_template = device_template
-                            elif current_battery_config == "none":
-                                # Try to match by template name patterns
-                                device_template_lower = device_template.lower()
-                                if "sbr" in device_template_lower:
-                                    # Look for SBR battery template
-                                    for opt_key in battery_options:
-                                        if "sbr" in opt_key.lower():
-                                            current_battery_config = opt_key
-                                            battery_template = opt_key
-                                            break
-                            _LOGGER.debug(
-                                "Found Battery device %s, setting battery_config to: %s",
-                                device_template,
-                                current_battery_config,
-                            )
-                            break
+                            template_type = battery_template_data.get("type", "")
+                            if template_type == "battery":
+                                # Filter by requires_connection_type (e.g. SBR needs LAN)
+                                required_conn = battery_template_data.get(
+                                    "requires_connection_type"
+                                )
+                                if required_conn:
+                                    required_norm = str(required_conn).strip().upper()
+                                    if connection_type_norm != required_norm:
+                                        continue
+                                display_name = battery_template_data.get(
+                                    "display_name", template_name
+                                )
+                                battery_templates_dict[template_name] = display_name
 
-                # Ensure current value is in options, fallback to "none"
-                if current_battery_config not in battery_options:
-                    current_battery_config = "none"
+                    # Sort battery templates alphabetically by display name for better UX
+                    sorted_battery_templates = dict(
+                        sorted(battery_templates_dict.items(), key=lambda x: x[1])
+                    )
+                    battery_options.update(sorted_battery_templates)
 
-                schema_fields[
-                    vol.Optional("battery_config", default=current_battery_config)
-                ] = vol.In(battery_options)
-                _LOGGER.debug(
-                    "Added battery_config selector to options flow with options: %s, default: %s",
-                    list(battery_options.keys()),
-                    current_battery_config,
-                )
+                    # Get current battery config - check devices array first
+                    current_battery_config = self.config_entry.data.get(
+                        "battery_config", "none"
+                    )
+                    battery_template = self.config_entry.data.get(
+                        "battery_template", "none"
+                    )
+
+                    # Check if there's a Battery device in the devices array
+                    devices = self.config_entry.data.get("devices", [])
+                    if isinstance(devices, list):
+                        for device in devices:
+                            device_template = device.get("template", "")
+                            device_type = device.get("type", "").lower()
+                            if (
+                                device_type == "battery"
+                                or device_template in battery_options
+                            ):
+                                # Found Battery device - use template name as battery_config
+                                if device_template in battery_options:
+                                    current_battery_config = device_template
+                                    battery_template = device_template
+                                elif current_battery_config == "none":
+                                    # Try to match by template name patterns
+                                    device_template_lower = device_template.lower()
+                                    if "sbr" in device_template_lower:
+                                        # Look for SBR battery template
+                                        for opt_key in battery_options:
+                                            if "sbr" in opt_key.lower():
+                                                current_battery_config = opt_key
+                                                battery_template = opt_key
+                                                break
+                                _LOGGER.debug(
+                                    "Found Battery device %s, setting battery_config to: %s",
+                                    device_template,
+                                    current_battery_config,
+                                )
+                                break
+
+                    # Ensure current value is in options, fallback to "none"
+                    if current_battery_config not in battery_options:
+                        current_battery_config = "none"
+
+                    schema_fields[
+                        vol.Optional("battery_config", default=current_battery_config)
+                    ] = vol.In(battery_options)
+                    _LOGGER.debug(
+                        "Added battery_config selector to options flow with options: %s, default: %s",
+                        list(battery_options.keys()),
+                        current_battery_config,
+                    )
 
             # Get valid_models from dynamic_config
             valid_models_for_check = dynamic_config.get(
@@ -3393,10 +3501,20 @@ class ModbusManagerOptionsFlow(config_entries.OptionsFlow):
 
         battery_templates_dict = {}
         template_names = await get_template_names()
+        connection_type = self.config_entry.data.get("connection_type", "LAN")
+        connection_type_norm = (
+            str(connection_type).strip().upper() if connection_type else "LAN"
+        )
         for template_name in template_names:
             template_data = await get_template_by_name(template_name)
             if template_data and isinstance(template_data, dict):
                 if template_data.get("type", "") == "battery":
+                    # Filter by requires_connection_type (e.g. SBR needs LAN)
+                    required_conn = template_data.get("requires_connection_type")
+                    if required_conn:
+                        required_norm = str(required_conn).strip().upper()
+                        if connection_type_norm != required_norm:
+                            continue
                     display_name = template_data.get("display_name", template_name)
                     battery_templates_dict[template_name] = display_name
 
@@ -3533,6 +3651,31 @@ class ModbusManagerOptionsFlow(config_entries.OptionsFlow):
     async def async_step_apply_config_changes(self, user_input: dict) -> FlowResult:
         """Apply configuration changes and reload integration if needed."""
         try:
+            # Force battery_config to none when battery_config condition not met (e.g. WINET)
+            template_name = self.config_entry.data.get("template", "Unknown")
+            template_data = await get_template_by_name(template_name)
+            if template_data:
+                battery_config_def = (
+                    template_data.get("dynamic_config", {}).get("battery_config", {})
+                    if isinstance(template_data.get("dynamic_config"), dict)
+                    else {}
+                )
+                condition = (
+                    battery_config_def.get("condition")
+                    if isinstance(battery_config_def, dict)
+                    else None
+                )
+                effective_data = {**self.config_entry.data, **user_input}
+                if condition and not _evaluate_condition(condition, effective_data):
+                    user_input = dict(user_input)
+                    user_input["battery_config"] = "none"
+                    user_input["battery_template"] = "none"
+                    _LOGGER.info(
+                        "Battery disabled: condition '%s' not met (connection_type=%s)",
+                        condition,
+                        effective_data.get("connection_type"),
+                    )
+
             # Check if dynamic configuration has changed
             dynamic_config_changed = False
             config_changes = {}

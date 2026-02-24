@@ -23,7 +23,7 @@
             },
             "connection": {
                 "title": "Connection Parameters",
-                "description": "Configure Modbus connection for template: {template_name}",
+                "description": "Configure Modbus connection for template: {template_name}\n\n{config_flow_note}",
                 "data": {
                     "prefix": "Device Prefix",
                     "host": "IP Address of Modbus Device",
@@ -104,7 +104,7 @@
             },
             "battery_template_selection": {
                 "title": "Select Battery Template",
-                "description": "Choose the template for your battery:\n\nInverter: {inverter_prefix}\nAvailable Templates: {available_templates}",
+                "description": "Choose the template for your battery:\n\nInverter: {inverter_prefix}\nAvailable Templates: {available_templates}\n\n{config_flow_note}",
                 "data": {
                     "battery_template": "Battery Template"
                 }

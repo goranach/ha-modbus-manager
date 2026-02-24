@@ -23,7 +23,7 @@
             },
             "connection": {
                 "title": "Verbindungsparameter",
-                "description": "Konfiguriere die Modbus-Verbindung für Template: {template_name}",
+                "description": "Konfiguriere die Modbus-Verbindung für Template: {template_name}\n\n{config_flow_note}",
                 "data": {
                     "prefix": "Geräte-Präfix",
                     "host": "IP-Adresse des Modbus-Geräts",
@@ -124,7 +124,7 @@
             },
             "battery_template_selection": {
                 "title": "Batterie-Template auswählen",
-                "description": "Wählen Sie das Template für Ihre Batterie:\n\nWechselrichter: {inverter_prefix}\nVerfügbare Templates: {available_templates}",
+                "description": "Wählen Sie das Template für Ihre Batterie:\n\nWechselrichter: {inverter_prefix}\nVerfügbare Templates: {available_templates}\n\n{config_flow_note}",
                 "data": {
                     "battery_template": "Batterie-Template"
                 }

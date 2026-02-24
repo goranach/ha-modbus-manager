@@ -5,11 +5,19 @@ All notable changes to the HA-Modbus-Manager project will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-## [0.2.5] - 2026-02-23
+## [0.2.5] - 2026-02-24
 
 ### ✨ Added
+
+#### SBR Battery – WiNet-S compatibility filter
+- SBR Battery template: `requires_connection_type: "LAN"` – SBR works only via LAN, not WiNet-S
+- Config flow: Battery template selection filters out SBR when inverter connection_type is WINET
+- `config_flow_note` on SBR: "Requires LAN connection. WiNet-S is not supported."
+
+#### Sungrow SHx – Meter type "None"
+- `meter_type` option "None" for inverters without smart meter connected
+- Meter registers filtered out when meter_type is "None"
+- Conditions updated: `meter_type in ['DTSU666', 'DTSU666-20']` for meter-related sensors/controls
 
 #### Sungrow AC011E Wallbox Template
 - New template for Sungrow EV wallboxes (AC007-00, AC011E-01, AC22E-01)
