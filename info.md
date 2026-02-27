@@ -51,7 +51,7 @@ This integration is provided "AS IS" without warranty of any kind. By using this
   - **Connection Types**: LAN/WINET support with register filtering
   - **Meter Support**: DTSU666, DTSU666-20 (dual-channel)
 - ☀️ **Sungrow SG Dynamic**: Model selection for SG series inverters
-- ☀️ **Sungrow iHomeManager**: New EMS template added (BETA - needs testing)
+- ☀️ **Sungrow iHomeManager**: New EMS template added - *needs testing*
 - 🔋 **Compleo EBox Professional**: EV charger wallbox integration template
 - 🔋 **Sungrow SBR Battery**: Battery system template
 - 🔌 **Sungrow AC011E Wallbox**: EV wallbox (AC007-00, AC011E-01, AC22E-01), RS485 via inverter – *needs testing*
@@ -103,7 +103,7 @@ The following templates were added recently and **have not been tested on real h
 
 ## 🎯 Current Status
 
-### Version 0.2.5 (Current - February 2026)
+### Version 0.2.6 (Current - February 2026)
 - ✅ Core Modbus integration with template system
 - ✅ Advanced data processing and entity types
 - ✅ Performance monitoring and register optimization
@@ -143,7 +143,7 @@ If you find this integration useful, please consider:
 
 ---
 
-**Version**: 0.2.5
+**Version**: 0.2.6
 **Status**: Beta - Active Development
 **Home Assistant**: 2025.1.0+
 **Last Updated**: February 2026

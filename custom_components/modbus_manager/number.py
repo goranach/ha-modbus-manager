@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import struct
 from typing import Any, Optional
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -383,21 +384,39 @@ class ModbusCoordinatorNumber(CoordinatorEntity, NumberEntity):
                 scale_factor = 1.0
 
             offset = self.register_config.get("offset", 0.0)
-            raw_value = int((value - offset) / scale_factor)
+            scaled_value = (value - offset) / scale_factor
+
+            # Convert to Modbus register format based on data type
+            if data_type in ("float", "float32"):
+                # IEEE 754 float32: 2 registers, big-endian
+                bytes_data = struct.pack(">f", float(scaled_value))
+                regs = list(struct.unpack(">HH", bytes_data))
+                swap = self.register_config.get("swap", "none")
+                if swap == "word":
+                    regs = [regs[1], regs[0]]
+                write_value: int | list[int] = regs
+                count = 2
+            elif data_type == "float64":
+                # IEEE 754 float64: 4 registers, big-endian
+                bytes_data = struct.pack(">d", float(scaled_value))
+                regs = list(struct.unpack(">HHHH", bytes_data))
+                write_value = regs
+                count = 4
+            else:
+                # Integer types (uint16, int16, uint32, int32, etc.)
+                write_value = int(scaled_value)
+                count = self.register_config.get("count", 1) or 1
 
             # Write to Modbus register
             from .modbus_utils import get_write_call_type
 
-            # Check for custom write function code
             write_function_code = self.register_config.get("write_function_code")
-            count = self.register_config.get("count", 1) or 1
-
             call_type = get_write_call_type(count, write_function_code)
 
             result = await self.coordinator.hub.async_pb_call(
                 slave_id,
                 address,
-                raw_value,
+                write_value,
                 call_type,
             )
 

@@ -5,6 +5,18 @@ All notable changes to the HA-Modbus-Manager project will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-02-24
+
+### 🐛 Fixed
+
+#### Number entity – float32/float64 register writes
+- Number controls with `data_type: "float32"` or `"float64"` now write correct IEEE 754 format to Modbus registers (was sending integer, causing write failure on devices like Compleo eBox)
+- Supports `swap: "word"` for devices with different byte order
+
+### 📚 Documentation
+- README: Added Sungrow AC011E Wallbox to supported devices
+- info.md: Added AC011E Wallbox and Heidelberg Energy Control (needs testing)
+
 ## [0.2.5] - 2026-02-24
 
 ### ✨ Added
