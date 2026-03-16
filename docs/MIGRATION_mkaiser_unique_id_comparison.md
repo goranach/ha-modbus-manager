@@ -25,7 +25,7 @@ The Home Assistant built-in Modbus integration uses the **entity name** to gener
 
 ### Modbus Manager
 
-Modbus Manager uses **unique_id** (with prefix) for `entity_id`:
+Modbus Manager uses **unique_id** (with prefix) or a `default_entity_id` parameter if specified for `entity_id`:
 
 - **Multi-device support:** Each device can have multiple entities. The prefix (e.g. `sg`, `sbr`) ensures uniqueness when several devices share the same hub (e.g. inverter + battery).
 - **Consistency:** `unique_id` is the single source of truth for both registry identity and entity_id; no mismatch between name and entity_id.
